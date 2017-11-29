@@ -1,0 +1,95 @@
+#! /usr/bin/env python
+
+import rospy
+from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
+import tf.transformations
+from geometry_msgs.msg import Twist
+
+
+# create a default object, no changes to I2C address or frequency
+mh = Adafruit_MotorHAT(addr=0x60)
+
+
+# recommended for auto-disabling motors on shutdown!
+def turnOffMotors():
+    mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
+    mh.getMotor(2).run(Adafruit_MotorHAT.RELEASE)
+    mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
+    mh.getMotor(4).run(Adafruit_MotorHAT.RELEASE)
+
+#atexit.register(turnOffMotors)
+
+leftMotor = mh.getMotor(1)
+rightMotor = mh.getMotor(2)
+
+leftMotor.run(Adafruit_MotorHAT.RELEASE)
+rightMotor.run(Adafruit_MotorHAT.RELEASE)
+
+leftMotorSpeed = 0
+rightMotorSpeed = 0
+width_robot = 0.1
+
+
+def stopMotors(leftMS, rightMS):
+    motorSpeed = leftMS
+    for i in reversed(range(motorSpeed)):
+        leftMS = i
+        rightMS = i
+        leftMotor.setSpeed(leftMS)
+        rightMotor.setSpeed(rightMS)
+
+
+def callback(data):
+    print(data)
+
+    twist_aux = data
+    vel_x = twist_aux.linear.x
+    vel_th = twist_aux.angular.z
+    x = 0.0
+    y = 0.0
+    th = 0.0
+    right_vel = 0.0
+    left_vel = 0.0
+
+    if vel_x == 0:
+        right_vel = vel_th * width_robot / 2.0
+        left_vel = (-1) * right_vel
+    elif vel_th == 0:
+        left_vel = right_vel = vel_x
+    else:
+        left_vel = vel_x - vel_th * width_robot / 2.0
+        right_vel = vel_x + vel_th * width_robot / 2.0
+
+    left_vel *= 255
+    right_vel *= 255
+
+    print(left_vel)
+    print(right_vel)
+
+    leftMotor.setSpeed(abs(int(left_vel)))
+    rightMotor.setSpeed(abs(int(right_vel)))
+
+    if left_vel > 0:
+        leftMotor.run(Adafruit_MotorHAT.FORWARD)
+    else:
+        leftMotor.run(Adafruit_MotorHAT.BACKWARD)
+    if right_vel > 0:
+        rightMotor.run(Adafruit_MotorHAT.FORWARD)
+    else:
+        rightMotor.run(Adafruit_MotorHAT.BACKWARD)
+
+
+def subscriber():
+    rospy.init_node('motor_hat_receiver', anonymous=True)
+    rospy.on_shutdown(turnOffMotors)
+    rospy.Subscriber("/cmd_vel", Twist, callback)
+
+    # spin() simply keeps python from exiting until this node is stopped
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    try:
+        subscriber()
+    except rospy.ROSInterruptException:
+        pass

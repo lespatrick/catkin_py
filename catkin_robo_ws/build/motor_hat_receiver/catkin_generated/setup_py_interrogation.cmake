@@ -1,0 +1,6 @@
+set(motor_hat_receiver_SETUP_PY_VERSION "0.0.0")
+set(motor_hat_receiver_SETUP_PY_SCRIPTS "")
+set(motor_hat_receiver_SETUP_PY_PACKAGES "motor_hat_receiver")
+set(motor_hat_receiver_SETUP_PY_PACKAGE_DIRS "src/motor_hat_receiver")
+set(motor_hat_receiver_SETUP_PY_MODULES "")
+set(motor_hat_receiver_SETUP_PY_MODULE_DIRS "")

@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/leszek/catkin_py/catkin_robo_ws/devel/setup.sh
