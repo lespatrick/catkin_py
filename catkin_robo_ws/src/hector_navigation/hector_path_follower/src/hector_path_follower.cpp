@@ -129,8 +129,6 @@ namespace pose_follower {
       return false;
     }
 
-
-
     //we want to compute a velocity command based on our current waypoint
     tf::Stamped<tf::Pose> target_pose;
     tf::poseStampedMsgToTF(global_plan_[current_waypoint_], target_pose);
@@ -178,16 +176,12 @@ namespace pose_follower {
     bool in_goal_position = false;
     while(fabs(diff.linear.x) <= tolerance_trans_ &&
           fabs(diff.linear.y) <= tolerance_trans_ &&
-    fabs(diff.angular.z) <= tolerance_rot_)
-    {
-      if(current_waypoint_ < global_plan_.size() - 1)
-      {
-  current_waypoint_++;
+          fabs(diff.angular.z) <= tolerance_rot_) {
+      if(current_waypoint_ < global_plan_.size() - 1) {
+        current_waypoint_++;
         tf::poseStampedMsgToTF(global_plan_[current_waypoint_], target_pose);
         diff = diff2D(target_pose, robot_pose);
-      }
-      else
-      {
+      } else {
         ROS_INFO("Reached goal: %d", current_waypoint_);
         in_goal_position = true;
         break;
@@ -202,6 +196,7 @@ namespace pose_follower {
     if(goal_reached_time_ + ros::Duration(tolerance_timeout_) < ros::Time::now()){
       geometry_msgs::Twist empty_twist;
       cmd_vel = empty_twist;
+      delegate.explorationGoalAchieved();
     }
 
     return true;

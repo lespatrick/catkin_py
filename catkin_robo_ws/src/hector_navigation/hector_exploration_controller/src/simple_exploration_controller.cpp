@@ -53,6 +53,7 @@ public:
     if (exploration_plan_service_client_.call(srv_exploration_plan)) {
       ROS_INFO("Generated exploration path with %u poses", (unsigned int)srv_exploration_plan.response.trajectory.poses.size());
       path_follower_.setPlan(srv_exploration_plan.response.trajectory.poses);
+      exploration_plan_generation_timer_.stop();
     } else {
       ROS_WARN("Service call for exploration service failed");
     }
@@ -65,7 +66,7 @@ public:
   }
 
   virtual void explorationGoalAchieved() {
-
+    exploration_plan_generation_timer_.start();
   }
 
 protected:
