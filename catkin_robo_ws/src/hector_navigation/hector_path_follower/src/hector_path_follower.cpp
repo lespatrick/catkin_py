@@ -196,7 +196,7 @@ namespace pose_follower {
     if(goal_reached_time_ + ros::Duration(tolerance_timeout_) < ros::Time::now()){
       geometry_msgs::Twist empty_twist;
       cmd_vel = empty_twist;
-      delegate.explorationGoalAchieved();
+      delegate->explorationGoalAchieved();
     }
 
     return true;
