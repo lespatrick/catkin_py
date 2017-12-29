@@ -39,14 +39,20 @@
 #include <geometry_msgs/Twist.h>
 
 namespace pose_follower {
-  class HectorPathFollower
-  {
+  class HectorPathFollowerDelegate {
+  public:
+    virtual void explorationGoalAchieved() = 0;
+  };
+
+  class HectorPathFollower {
     public:
       HectorPathFollower();
       void initialize(tf::TransformListener* tf);
       bool isGoalReached();
       bool setPlan(const std::vector<geometry_msgs::PoseStamped>& global_plan);
       bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
+
+      HectorPathFollowerDelegate *delegate;
 
     private:
       inline double sign(double n){
