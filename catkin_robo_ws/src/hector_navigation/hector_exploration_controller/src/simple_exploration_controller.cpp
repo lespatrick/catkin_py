@@ -39,7 +39,7 @@ public:
     exploration_plan_service_client_ = nh.serviceClient<hector_nav_msgs::GetRobotTrajectory>("get_exploration_path");
 
     path_follower_.initialize(&tfl_);
-    path_follower_->delegate = this;
+    path_follower_.delegate = this;
 
     exploration_plan_generation_timer_ = nh.createTimer(ros::Duration(10.0), &SimpleExplorationController::timerPlanExploration, this, false );
     cmd_vel_generator_timer_ = nh.createTimer(ros::Duration(0.05), &SimpleExplorationController::timerCmdVelGeneration, this, false );
