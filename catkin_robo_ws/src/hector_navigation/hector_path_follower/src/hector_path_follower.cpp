@@ -172,6 +172,7 @@ namespace pose_follower {
 
     //if it is legal... we'll pass it on
     cmd_vel = test_vel;
+    ROS_INFO("Calculating cmd_vel");
 
     bool in_goal_position = false;
     while(fabs(diff.linear.x) <= tolerance_trans_ &&
