@@ -91,6 +91,7 @@ namespace pose_follower {
       std::vector<geometry_msgs::PoseStamped> global_plan_;
       //base_local_planner::TrajectoryPlannerROS collision_planner_;
       int samples_;
+      geometry_msgs::Twist last_cmd_vel;
   };
 };
 #endif

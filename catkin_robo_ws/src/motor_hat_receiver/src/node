@@ -17,7 +17,7 @@ def turnOffMotors():
     mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
     mh.getMotor(4).run(Adafruit_MotorHAT.RELEASE)
 
-#atexit.register(turnOffMotors)
+atexit.register(turnOffMotors)
 
 leftMotor = mh.getMotor(1)
 rightMotor = mh.getMotor(2)
@@ -28,6 +28,7 @@ rightMotor.run(Adafruit_MotorHAT.RELEASE)
 leftMotorSpeed = 0
 rightMotorSpeed = 0
 width_robot = 0.1
+scaleFactor = 0.5
 
 
 def stopMotors(leftMS, rightMS):
@@ -40,8 +41,6 @@ def stopMotors(leftMS, rightMS):
 
 
 def callback(data):
-    print(data)
-
     twist_aux = data
     vel_x = twist_aux.linear.x
     vel_th = twist_aux.angular.z
@@ -50,21 +49,29 @@ def callback(data):
     th = 0.0
     right_vel = 0.0
     left_vel = 0.0
+    PI = 3.14
 
     if vel_x == 0:
-        right_vel = vel_th * width_robot / 2.0
+        right_vel = vel_th / PI
         left_vel = (-1) * right_vel
     elif vel_th == 0:
         left_vel = right_vel = vel_x
     else:
-        left_vel = vel_x - vel_th * width_robot / 2.0
-        right_vel = vel_x + vel_th * width_robot / 2.0
+        left_vel = vel_x * (1 + vel_th / PI)
+        right_vel = vel_x * (1 - vel_th / PI)
 
     left_vel *= 255
     right_vel *= 255
 
-    print(left_vel)
-    print(right_vel)
+    if left_vel > 0:
+        left_vel = left_vel * (1 - scaleFactor) + scaleFactor
+    else:
+        left_vel = left_vel * (1 - scaleFactor) - scaleFactor
+
+    if right_vel > 0:
+        right_vel = right_vel * (1 - scaleFactor) + scaleFactor
+    else:
+        right_vel = right_vel * (1 - scaleFactor) - scaleFactor
 
     leftMotor.setSpeed(abs(int(left_vel)))
     rightMotor.setSpeed(abs(int(right_vel)))

@@ -133,55 +133,38 @@ namespace pose_follower {
     tf::Stamped<tf::Pose> target_pose;
     tf::poseStampedMsgToTF(global_plan_[current_waypoint_], target_pose);
 
-    ROS_DEBUG("HectorPathFollower: current robot pose %f %f ==> %f", robot_pose.getOrigin().x(), robot_pose.getOrigin().y(), tf::getYaw(robot_pose.getRotation()));
-    ROS_DEBUG("HectorPathFollower: target robot pose %f %f ==> %f", target_pose.getOrigin().x(), target_pose.getOrigin().y(), tf::getYaw(target_pose.getRotation()));
+    ROS_INFO("HectorPathFollower: current robot pose %f %f ==> %f", robot_pose.getOrigin().x(), robot_pose.getOrigin().y(), tf::getYaw(robot_pose.getRotation()));
+    ROS_INFO("HectorPathFollower: target robot pose %f %f ==> %f", target_pose.getOrigin().x(), target_pose.getOrigin().y(), tf::getYaw(target_pose.getRotation()));
 
-    //get the difference between the two poses
-    geometry_msgs::Twist diff = diff2D(target_pose, robot_pose);
-    ROS_DEBUG("HectorPathFollower: diff %f %f ==> %f", diff.linear.x, diff.linear.y, diff.angular.z);
+    double dx = target_pose.getOrigin().x() - robot_pose.getOrigin().x();
+    double dy = target_pose.getOrigin().y() - robot_pose.getOrigin().y();
+    double dist = sqrt(pow(dx, 2) + pow(dy, 2));
+    double atandd = atan2(dy, dx);
+    double rotation = tf::getYaw(robot_pose.getRotation());
 
-    geometry_msgs::Twist limit_vel = limitTwist(diff);
+    double d_rot = atandd - rotation;
+    if (atandd < 0)
+      d_rot += M_PI_2;
+    else
+      d_rot -= M_PI_2;
 
-    geometry_msgs::Twist test_vel = limit_vel;
-    bool legal_traj = true; //collision_planner_.checkTrajectory(test_vel.linear.x, test_vel.linear.y, test_vel.angular.z, true);
+    ROS_INFO("atan: %f, rotation: %f, d_rot: %f", atandd, rotation,  d_rot);
 
-    double scaling_factor = 1.0;
-    double ds = scaling_factor / samples_;
+    double acceleration = 0.005;
+    double max_speed = 0.4;
+    if (dist < 1)
+      max_speed = 0.3;
 
-    //let's make sure that the velocity command is legal... and if not, scale down
-    if(!legal_traj){
-      for(int i = 0; i < samples_; ++i){
-        test_vel.linear.x = limit_vel.linear.x * scaling_factor;
-        test_vel.linear.y = limit_vel.linear.y * scaling_factor;
-        test_vel.angular.z = limit_vel.angular.z * scaling_factor;
-        test_vel = limitTwist(test_vel);
-        //if(collision_planner_.checkTrajectory(test_vel.linear.x, test_vel.linear.y, test_vel.angular.z, false)){
-          legal_traj = true;
-          break;
-        //}
-        scaling_factor -= ds;
-      }
-    }
-
-    if(!legal_traj){
-      ROS_ERROR("Not legal (%.2f, %.2f, %.2f)", limit_vel.linear.x, limit_vel.linear.y, limit_vel.angular.z);
-      geometry_msgs::Twist empty_twist;
-      cmd_vel = empty_twist;
-      return false;
-    }
-
-    //if it is legal... we'll pass it on
-    cmd_vel = test_vel;
-    ROS_INFO("Calculating cmd_vel");
-
+    geometry_msgs::Twist test_vel;
+    test_vel.linear.x = std::min(last_cmd_vel.linear.x + acceleration, max_speed);
+    test_vel.angular.z = d_rot;
+    
     bool in_goal_position = false;
-    while(fabs(diff.linear.x) <= tolerance_trans_ &&
-          fabs(diff.linear.y) <= tolerance_trans_ &&
-          fabs(diff.angular.z) <= tolerance_rot_) {
+    while(fabs(dx) <= tolerance_trans_ &&
+          fabs(dy) <= tolerance_trans_) {
       if(current_waypoint_ < global_plan_.size() - 1) {
         current_waypoint_++;
         tf::poseStampedMsgToTF(global_plan_[current_waypoint_], target_pose);
-        diff = diff2D(target_pose, robot_pose);
       } else {
         ROS_INFO("Reached goal: %d", current_waypoint_);
         in_goal_position = true;
@@ -190,15 +173,30 @@ namespace pose_follower {
     }
 
     //if we're not in the goal position, we need to update time
-    if(!in_goal_position)
+    if(!in_goal_position) {
       goal_reached_time_ = ros::Time::now();
-
-    //check if we've reached our goal for long enough to succeed
-    if(goal_reached_time_ + ros::Duration(tolerance_timeout_) < ros::Time::now()){
+    } else {
       geometry_msgs::Twist empty_twist;
-      cmd_vel = empty_twist;
+      test_vel = empty_twist;
       delegate->explorationGoalAchieved();
     }
+    // //if it is legal... we'll pass it on
+    cmd_vel = test_vel;
+
+    double twist_cos = cos(test_vel.angular.z);
+    if (twist_cos < 0) {
+      cmd_vel.linear.x *= -1;
+      if (test_vel.angular.z > 0) {
+        cmd_vel.angular.z = (M_PI - cmd_vel.angular.z) * -1.0;
+      } else {
+        cmd_vel.angular.z += M_PI;
+        cmd_vel.angular.z *= -1.0;
+      }
+    }
+    ROS_INFO("HectorPathFollower:test_vel x: %f, z: %f", test_vel.linear.x, test_vel.angular.z);
+    ROS_INFO("HectorPathFollower:test_vel x: %f, z: %f", cmd_vel.linear.x, cmd_vel.angular.z);
+
+    last_cmd_vel = test_vel;
 
     return true;
   }

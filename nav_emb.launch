@@ -77,7 +77,7 @@
 
 </node>
 
-<node pkg="hector_exploration_controller" type="simple_exploration_controller" name="simple_exploration_controller">
+<node pkg="hector_exploration_controller" type="simple_exploration_controller" name="simple_exploration_controller" launch-prefix="xterm -e gdb -ex run --args">
 </node>
 
     <param name="robot_description" textfile="$(find robot_description)/urdf/robot.urdf" />
