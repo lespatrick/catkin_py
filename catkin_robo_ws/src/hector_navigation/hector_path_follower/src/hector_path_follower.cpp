@@ -120,6 +120,8 @@ namespace pose_follower {
     if (global_plan_.size() == 0)
       return false;
 
+    ROS_INFO("Global plan size: %lu", global_plan_.size());
+
     //get the current pose of the robot in the fixed frame
     tf::Stamped<tf::Pose> robot_pose;
     if(!this->getRobotPose(robot_pose)){
@@ -133,32 +135,14 @@ namespace pose_follower {
     tf::Stamped<tf::Pose> target_pose;
     tf::poseStampedMsgToTF(global_plan_[current_waypoint_], target_pose);
 
+    ROS_INFO("current waypoint: %i", current_waypoint_);
+
     ROS_INFO("HectorPathFollower: current robot pose %f %f ==> %f", robot_pose.getOrigin().x(), robot_pose.getOrigin().y(), tf::getYaw(robot_pose.getRotation()));
     ROS_INFO("HectorPathFollower: target robot pose %f %f ==> %f", target_pose.getOrigin().x(), target_pose.getOrigin().y(), tf::getYaw(target_pose.getRotation()));
 
     double dx = target_pose.getOrigin().x() - robot_pose.getOrigin().x();
     double dy = target_pose.getOrigin().y() - robot_pose.getOrigin().y();
-    double dist = sqrt(pow(dx, 2) + pow(dy, 2));
-    double atandd = atan2(dy, dx);
-    double rotation = tf::getYaw(robot_pose.getRotation());
 
-    double d_rot = atandd - rotation;
-    if (atandd < 0)
-      d_rot += M_PI_2;
-    else
-      d_rot -= M_PI_2;
-
-    ROS_INFO("atan: %f, rotation: %f, d_rot: %f", atandd, rotation,  d_rot);
-
-    double acceleration = 0.005;
-    double max_speed = 0.4;
-    if (dist < 1)
-      max_speed = 0.3;
-
-    geometry_msgs::Twist test_vel;
-    test_vel.linear.x = std::min(last_cmd_vel.linear.x + acceleration, max_speed);
-    test_vel.angular.z = d_rot;
-    
     bool in_goal_position = false;
     while(fabs(dx) <= tolerance_trans_ &&
           fabs(dy) <= tolerance_trans_) {
@@ -168,33 +152,62 @@ namespace pose_follower {
       } else {
         ROS_INFO("Reached goal: %d", current_waypoint_);
         in_goal_position = true;
-        break;
+        geometry_msgs::Twist empty_twist;
+        cmd_vel = empty_twist;
+        last_cmd_vel = cmd_vel;
+        delegate->explorationGoalAchieved();
+        return true;
       }
     }
 
     //if we're not in the goal position, we need to update time
-    if(!in_goal_position) {
-      goal_reached_time_ = ros::Time::now();
+    goal_reached_time_ = ros::Time::now();
+      
+    double dist = sqrt(pow(dx, 2) + pow(dy, 2));
+    double atandd = atan2(-dx, dy);
+    
+    double rotation = tf::getYaw(robot_pose.getRotation());
+
+    double d_rot = atandd - rotation;
+
+    // if a > pi
+    if (d_rot > M_PI) 
+      d_rot = -2.0*M_PI + d_rot;
+    else if (d_rot < -M_PI)
+      d_rot = 2.0*M_PI + d_rot;
+
+    //if a < -pi
+
+    ROS_INFO("atan: %f, rotation: %f, d_rot: %f", atandd, rotation,  d_rot);
+
+    double acceleration = 0.005;
+    double max_speed = 0.5;
+    double limited_speed = 0.3;
+
+    geometry_msgs::Twist test_vel;
+
+    double twist_cos = cos(d_rot);
+    if (twist_cos < 0 && d_rot < 0) {
+      test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
+      test_vel.angular.z = M_PI + d_rot;
+      if (std::abs(test_vel.angular.z) > M_PI_4)
+        test_vel.linear.x = std::max(test_vel.linear.x, -limited_speed);
+    } else if (twist_cos < 0 && d_rot > 0) {
+      test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
+      test_vel.angular.z = -M_PI + d_rot;
+      if (std::abs(test_vel.angular.z) > M_PI_4)
+        test_vel.linear.x = std::max(test_vel.linear.x, -limited_speed);
     } else {
-      geometry_msgs::Twist empty_twist;
-      test_vel = empty_twist;
-      delegate->explorationGoalAchieved();
+      test_vel.linear.x = std::min(last_cmd_vel.linear.x + acceleration, max_speed);
+      test_vel.angular.z = d_rot;
+      if (std::abs(test_vel.angular.z) > M_PI_4)
+        test_vel.linear.x = std::max(test_vel.linear.x, limited_speed);
     }
+    
     // //if it is legal... we'll pass it on
     cmd_vel = test_vel;
-
-    double twist_cos = cos(test_vel.angular.z);
-    if (twist_cos < 0) {
-      cmd_vel.linear.x *= -1;
-      if (test_vel.angular.z > 0) {
-        cmd_vel.angular.z = (M_PI - cmd_vel.angular.z) * -1.0;
-      } else {
-        cmd_vel.angular.z += M_PI;
-        cmd_vel.angular.z *= -1.0;
-      }
-    }
+    
     ROS_INFO("HectorPathFollower:test_vel x: %f, z: %f", test_vel.linear.x, test_vel.angular.z);
-    ROS_INFO("HectorPathFollower:test_vel x: %f, z: %f", cmd_vel.linear.x, cmd_vel.angular.z);
 
     last_cmd_vel = test_vel;
 
