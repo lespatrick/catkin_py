@@ -170,13 +170,10 @@ namespace pose_follower {
 
     double d_rot = atandd - rotation;
 
-    // if a > pi
     if (d_rot > M_PI) 
       d_rot = -2.0*M_PI + d_rot;
     else if (d_rot < -M_PI)
       d_rot = 2.0*M_PI + d_rot;
-
-    //if a < -pi
 
     ROS_INFO("atan: %f, rotation: %f, d_rot: %f", atandd, rotation,  d_rot);
 
@@ -190,18 +187,12 @@ namespace pose_follower {
     if (twist_cos < 0 && d_rot < 0) {
       test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
       test_vel.angular.z = M_PI + d_rot;
-      if (std::abs(test_vel.angular.z) > M_PI_4)
-        test_vel.linear.x = std::max(test_vel.linear.x, -limited_speed);
     } else if (twist_cos < 0 && d_rot > 0) {
       test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
       test_vel.angular.z = -M_PI + d_rot;
-      if (std::abs(test_vel.angular.z) > M_PI_4)
-        test_vel.linear.x = std::max(test_vel.linear.x, -limited_speed);
     } else {
       test_vel.linear.x = std::min(last_cmd_vel.linear.x + acceleration, max_speed);
       test_vel.angular.z = d_rot;
-      if (std::abs(test_vel.angular.z) > M_PI_4)
-        test_vel.linear.x = std::max(test_vel.linear.x, limited_speed);
     }
     
     // //if it is legal... we'll pass it on
