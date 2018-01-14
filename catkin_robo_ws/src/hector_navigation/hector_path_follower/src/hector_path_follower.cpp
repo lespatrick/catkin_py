@@ -152,7 +152,7 @@
                     geometry_msgs::Twist empty_twist;
                     cmd_vel = empty_twist;
                     last_cmd_vel = cmd_vel;
-                    delegate->explorationGoalAchiPeved();
+                    delegate->explorationGoalAchieved();
                 }
                 return true;
             }
@@ -183,10 +183,10 @@
             double twist_cos = cos(d_rot);
             if (twist_cos < 0 && d_rot < 0) {
                 test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
-                test_vel.angular.z = M_PI + d_rot;
+                test_vel.angular.z = -1.0 * (M_PI + d_rot);
             } else if (twist_cos < 0 && d_rot > 0) {
                 test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
-                test_vel.angular.z = -M_PI + d_rot;
+                test_vel.angular.z = -1.0 * (-M_PI + d_rot);
             } else {
                 test_vel.linear.x = std::min(last_cmd_vel.linear.x + acceleration, max_speed);
                 test_vel.angular.z = d_rot;
