@@ -134,11 +134,11 @@
             tf::Stamped<tf::Pose> target_pose;
             tf::poseStampedMsgToTF(global_plan_[current_waypoint_], target_pose);
 
-            ROS_INFO("current waypoint: %i", current_waypoint_);
+            // ROS_INFO("current waypoint: %i", current_waypoint_);
+            // ROS_INFO("HectorPathFollower: current robot pose %f %f ==> %f", robot_pose.getOrigin().x(), robot_pose.getOrigin().y(), tf::getYaw(robot_pose.getRotation()));
+            // ROS_INFO("HectorPathFollower: target robot pose %f %f ==> %f", target_pose.getOrigin().x(), target_pose.getOrigin().y(), tf::getYaw(target_pose.getRotation()));
 
-            ROS_INFO("HectorPathFollower: current robot pose %f %f ==> %f", robot_pose.getOrigin().x(), robot_pose.getOrigin().y(), tf::getYaw(robot_pose.getRotation()));
-            ROS_INFO("HectorPathFollower: target robot pose %f %f ==> %f", target_pose.getOrigin().x(), target_pose.getOrigin().y(), tf::getYaw(target_pose.getRotation()));
-
+            // delta distances to target position
             double dx = target_pose.getOrigin().x() - robot_pose.getOrigin().x();
             double dy = target_pose.getOrigin().y() - robot_pose.getOrigin().y();
 
@@ -173,12 +173,23 @@
             else if (d_rot < -M_PI)
             d_rot = 2.0*M_PI + d_rot;
 
-            ROS_INFO("atan: %f, rotation: %f, d_rot: %f", atandd, rotation,  d_rot);
+            // ROS_INFO("atan: %f, rotation: %f, d_rot: %f", atandd, rotation,  d_rot);
 
-            double acceleration = 0.007;
-            double angular_acc = 0.01;
-            double max_speed = 0.55;
-            double max_angular_speed = 2.0;
+            // delta distances between updates
+            double deltaX = std::abs(lastPose_.getOrigin().x() - robot_pose.getOrigin().x());
+            double deltaY = std::abs(lastPose_.getOrigin().y() - robot_pose.getOrigin().y());
+            double deltaRot = std::abs(tf::getYaw(lastPose_.getRotation()) - tf::getYaw(robot_pose.getRotation()));
+            double deltaTime = robot_pose.stamp.toSec() - lastPose_.stamp.toSec();
+            double deltaDistance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
+            double linearSpeed = deltaDistance / deltaTime;
+            double angularSpeed = deltaRotation / deltaTime;
+
+            ROS_INFO("deltaX: %0.2f deltaY: %0.2f deltaRot: %0.2f deltaT: %0.2f",
+                    deltaX, deltaY, deltaRot, deltaTime);
+            ROS_INFO("linearSpeed: %0.2f angularSpeed: %0.2f",
+                    linearSpeed, angularSpeed);
+
+            lastPose_ = robot_pose;
 
             geometry_msgs::Twist test_vel;
 

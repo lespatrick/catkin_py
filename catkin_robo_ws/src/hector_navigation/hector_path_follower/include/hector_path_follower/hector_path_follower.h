@@ -95,6 +95,13 @@ namespace pose_follower {
       geometry_msgs::Twist last_angular_vel;
 
       bool rotation_mode = false;
+
+      tf::Stamped<tf::Pose> lastPose_;
+
+      const double acceleration = 0.007;
+      const double angular_acc = 0.01;
+      const double max_speed = 0.55;
+      const double max_angular_speed = 2.0;
   };
 };
 #endif
