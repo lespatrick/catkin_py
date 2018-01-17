@@ -146,6 +146,7 @@
             if (fabs(dx) <= tolerance_trans_ && fabs(dy) <= tolerance_trans_) {
                 if (current_waypoint_ < global_plan_.size() - 1) {
                     current_waypoint_++;
+                    last_cmd_vel.linear.x += (last_cmd_vel.linear.x > 0 ? -0.1 : 0.1);
                 } else {
                     ROS_INFO("Reached goal: %d", current_waypoint_);
                     in_goal_position = true;
@@ -174,9 +175,10 @@
 
             ROS_INFO("atan: %f, rotation: %f, d_rot: %f", atandd, rotation,  d_rot);
 
-            double acceleration = 0.005;
-            double max_speed = 0.5;
-            double limited_speed = 0.3;
+            double acceleration = 0.007;
+            double angular_acc = 0.01;
+            double max_speed = 0.55;
+            double max_angular_speed = 2.0;
 
             geometry_msgs::Twist test_vel;
 
@@ -190,6 +192,25 @@
             } else {
                 test_vel.linear.x = std::min(last_cmd_vel.linear.x + acceleration, max_speed);
                 test_vel.angular.z = d_rot;
+            }
+
+            if ((std::abs(test_vel.angular.z) > M_PI_4 && !rotation_mode) ||
+            (std::abs(test_vel.angular.z) > M_PI / 6.0 && rotation_mode)) {
+                rotation_mode = true;
+                last_cmd_vel = geometry_msgs::Twist();
+
+                test_vel.linear.x = 0.0;
+                if (test_vel.angular.z > 0) {
+                    test_vel.angular.z = M_PI_2;
+                    // test_vel.angular.z = std::min(last_angular_vel.angular.z + angular_acc, max_angular_speed);
+                } else if (test_vel.angular.z < 0) {
+                    test_vel.angular.z = -M_PI_2;
+                    // test_vel.angular.z = std::max(last_angular_vel.angular.z - angular_acc, -max_angular_speed);
+                }
+                last_angular_vel = test_vel;
+            } else {
+                rotation_mode = false;
+                last_angular_vel = geometry_msgs::Twist();
             }
 
             // //if it is legal... we'll pass it on

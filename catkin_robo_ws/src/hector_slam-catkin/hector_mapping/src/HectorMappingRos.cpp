@@ -60,7 +60,7 @@ HectorMappingRos::HectorMappingRos()
   private_nh_.param("pub_map_odom_transform", p_pub_map_odom_transform_,true);
   private_nh_.param("pub_odometry", p_pub_odometry_,false);
   private_nh_.param("advertise_map_service", p_advertise_map_service_,true);
-  private_nh_.param("scan_subscriber_queue_size", p_scan_subscriber_queue_size_, 5);
+  private_nh_.param("scan_subscriber_queue_size", p_scan_subscriber_queue_size_, 1000);
 
   private_nh_.param("map_resolution", p_map_resolution_, 0.025);
   private_nh_.param("map_size", p_map_size_, 1024);

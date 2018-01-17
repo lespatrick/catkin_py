@@ -87,11 +87,14 @@ namespace pose_follower {
       //nav_msgs::Odometry base_odom_;
       double trans_stopped_velocity_, rot_stopped_velocity_;
       ros::Time goal_reached_time_;
-      unsigned int current_waypoint_; 
+      unsigned int current_waypoint_;
       std::vector<geometry_msgs::PoseStamped> global_plan_;
       //base_local_planner::TrajectoryPlannerROS collision_planner_;
       int samples_;
       geometry_msgs::Twist last_cmd_vel;
+      geometry_msgs::Twist last_angular_vel;
+
+      bool rotation_mode = false;
   };
 };
 #endif
