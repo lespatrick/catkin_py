@@ -143,7 +143,9 @@
             double dy = target_pose.getOrigin().y() - robot_pose.getOrigin().y();
 
             bool in_goal_position = false;
-            if (fabs(dx) <= tolerance_trans_ && fabs(dy) <= tolerance_trans_) {
+            double tolerance = (current_waypoint_ != global_plan_.size() - 1 ? 0.2 : tolerance_trans_);
+
+            if (fabs(dx) <= tolerance && fabs(dy) <= tolerance) {
                 if (current_waypoint_ < global_plan_.size() - 1) {
                     current_waypoint_++;
                     last_cmd_vel.linear.x += (last_cmd_vel.linear.x > 0 ? -0.1 : 0.1);
@@ -176,32 +178,55 @@
             // ROS_INFO("atan: %f, rotation: %f, d_rot: %f", atandd, rotation,  d_rot);
 
             // delta distances between updates
-            double deltaX = std::abs(lastPose_.getOrigin().x() - robot_pose.getOrigin().x());
-            double deltaY = std::abs(lastPose_.getOrigin().y() - robot_pose.getOrigin().y());
-            double deltaRot = std::abs(tf::getYaw(lastPose_.getRotation()) - tf::getYaw(robot_pose.getRotation()));
-            double deltaTime = robot_pose.stamp.toSec() - lastPose_.stamp.toSec();
+            tf::Stamped<tf::Pose> *lastPose_ = &lastPoses_.front();
+            if (!lastPose_)
+                lastPose_ = new tf::Stamped<tf::Pose>();
+
+            if (lastPoses_.size() > 5)
+                lastPoses_.pop_front();
+
+            double deltaX = std::abs(lastPose_->getOrigin().x() - robot_pose.getOrigin().x());
+            double deltaY = std::abs(lastPose_->getOrigin().y() - robot_pose.getOrigin().y());
+            double deltaRot = std::abs(tf::getYaw(lastPose_->getRotation()) - tf::getYaw(robot_pose.getRotation()));
+            double deltaTime = robot_pose.stamp_.toSec() - lastPose_->stamp_.toSec();
             double deltaDistance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
             double linearSpeed = deltaDistance / deltaTime;
-            double angularSpeed = deltaRotation / deltaTime;
+            double angularSpeed = deltaRot / deltaTime;
 
-            ROS_INFO("deltaX: %0.2f deltaY: %0.2f deltaRot: %0.2f deltaT: %0.2f",
-                    deltaX, deltaY, deltaRot, deltaTime);
-            ROS_INFO("linearSpeed: %0.2f angularSpeed: %0.2f",
+            const double expectedAbsoluteSpeed = 0.3;
+            const double expectedRotationSpeed = 0.1;
+
+            const double max_speed = 0.6;
+
+            ROS_INFO("deltaDist: %0.4f deltaRot: %0.4f deltaT: %0.4f",
+                    deltaDistance, deltaRot, deltaTime);
+            ROS_INFO("linearSpeed: %0.4f angularSpeed: %0.4f",
                     linearSpeed, angularSpeed);
 
-            lastPose_ = robot_pose;
+            lastPoses_.push_back(robot_pose);
 
             geometry_msgs::Twist test_vel;
 
             double twist_cos = cos(d_rot);
+
+            if (std::abs(last_cmd_vel.linear.x == 0)){
+                last_cmd_vel.linear.x = (twist_cos > 0 ?  expectedAbsoluteSpeed : -expectedAbsoluteSpeed);
+            }
+
             if (twist_cos < 0 && d_rot < 0) {
-                test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
+                test_vel.linear.x = (linearSpeed > expectedAbsoluteSpeed ? last_cmd_vel.linear.x + acceleration : last_cmd_vel.linear.x - acceleration);
+                test_vel.linear.x = std::max(test_vel.linear.x, -max_speed);
+                // test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
                 test_vel.angular.z = -1.0 * (M_PI + d_rot);
             } else if (twist_cos < 0 && d_rot > 0) {
-                test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
+                test_vel.linear.x = (linearSpeed > expectedAbsoluteSpeed ? last_cmd_vel.linear.x + acceleration : last_cmd_vel.linear.x - acceleration);
+                test_vel.linear.x = std::max(test_vel.linear.x, -max_speed);
+                // test_vel.linear.x = std::max(last_cmd_vel.linear.x - acceleration, -max_speed);
                 test_vel.angular.z = -1.0 * (-M_PI + d_rot);
             } else {
-                test_vel.linear.x = std::min(last_cmd_vel.linear.x + acceleration, max_speed);
+                test_vel.linear.x = (linearSpeed > expectedAbsoluteSpeed ? last_cmd_vel.linear.x - acceleration : last_cmd_vel.linear.x + acceleration);
+                test_vel.linear.x = std::min(test_vel.linear.x, max_speed);
+                // test_vel.linear.x = std::min(last_cmd_vel.linear.x + acceleration, max_speed);
                 test_vel.angular.z = d_rot;
             }
 
@@ -210,13 +235,20 @@
                 rotation_mode = true;
                 last_cmd_vel = geometry_msgs::Twist();
 
-                test_vel.linear.x = 0.0;
+                if (last_angular_vel.angular.z == 0) {
+                    last_angular_vel.angular.z = (test_vel.angular.z > 0 ? M_PI / 3.0 : -M_PI / 3.0);
+                }
+
+                test_vel.linear.x = 0.3;
                 if (test_vel.angular.z > 0) {
-                    test_vel.angular.z = M_PI_2;
-                    // test_vel.angular.z = std::min(last_angular_vel.angular.z + angular_acc, max_angular_speed);
+                    // test_vel.angular.z = M_PI_2 + 0.2;
+
+                    // test_vel.angular.z = (angularSpeed > expectedRotationSpeed ? last_angular_vel.angular.z - angular_acc : last_angular_vel.angular.z + angular_acc);
+                    test_vel.angular.z = std::min(last_angular_vel.angular.z + angular_acc, max_angular_speed);
                 } else if (test_vel.angular.z < 0) {
-                    test_vel.angular.z = -M_PI_2;
-                    // test_vel.angular.z = std::max(last_angular_vel.angular.z - angular_acc, -max_angular_speed);
+                    // test_vel.angular.z = -M_PI_2 - 0.2;
+                    // test_vel.angular.z = (angularSpeed > expectedRotationSpeed ? last_angular_vel.angular.z + angular_acc : last_angular_vel.angular.z - angular_acc);
+                    test_vel.angular.z = std::max(last_angular_vel.angular.z - angular_acc, -max_angular_speed);
                 }
                 last_angular_vel = test_vel;
             } else {
@@ -225,9 +257,9 @@
             }
 
             // //if it is legal... we'll pass it on
-            cmd_vel = test_vel;
+            // cmd_vel = test_vel;
 
-            ROS_INFO("HectorPathFollower:test_vel x: %f, z: %f", test_vel.linear.x, test_vel.angular.z);
+            // ROS_INFO("HectorPathFollower:test_vel x: %f, z: %f", test_vel.linear.x, test_vel.angular.z);
 
             last_cmd_vel = test_vel;
 

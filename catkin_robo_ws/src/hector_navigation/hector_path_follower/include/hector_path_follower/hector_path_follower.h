@@ -37,6 +37,7 @@
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <list>
 
 namespace pose_follower {
   class HectorPathFollowerDelegate {
@@ -96,7 +97,7 @@ namespace pose_follower {
 
       bool rotation_mode = false;
 
-      tf::Stamped<tf::Pose> lastPose_;
+      std::list<tf::Stamped<tf::Pose> > lastPoses_;
 
       const double acceleration = 0.007;
       const double angular_acc = 0.01;

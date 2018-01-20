@@ -46,7 +46,12 @@
             exploration_plan_generation_timer_ = nh.createTimer(ros::Duration(10.0), &SimpleExplorationController::timerPlanExploration, this, false );
             cmd_vel_generator_timer_ = nh.createTimer(ros::Duration(0.05), &SimpleExplorationController::timerCmdVelGeneration, this, false );
 
+            exploration_plan_generation_timer_.stop();
+            cmd_vel_generator_timer_.stop();
+
             manual_goal_sub_ = nh.subscribe("manual_goal_received", 2, &SimpleExplorationController::manualGoalNavigation, this);
+            exploration_mode_sub_ = nh.subscribe("exploration_on", 2, &SimpleExplorationController::explorationModeHandler, this);
+            terminate_motors_sub_ = nh.subscribe("stop_motors", 2, &SimpleExplorationController::stopMotorsHandler, this);
             
             vel_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel", 10);
         }
@@ -69,7 +74,30 @@
             vel_pub_.publish(twist);
         }
 
+        void stopMotorsHandler(const std_msgs::String &message) {
+            ROS_INFO("Motors stopped from REST");
+            exploration_plan_generation_timer_.stop();
+            cmd_vel_generator_timer_.stop();
+            geometry_msgs::Twist emptyTwist;
+            vel_pub_.publish(emptyTwist);
+        }
+
+        void explorationModeHandler(const std_msgs::String &message) {
+            if (message.data == "ON") {
+                ROS_INFO("Exploration started from REST");
+                manualTarget = false;
+                exploration_plan_generation_timer_.start();
+                cmd_vel_generator_timer_.start();
+            } else {
+                ROS_INFO("Exploration stopped from REST");
+                manualTarget = true;
+                exploration_plan_generation_timer_.stop();
+                cmd_vel_generator_timer_.stop();
+            }
+        }
+
         void manualGoalNavigation(const std_msgs::String &message) {
+            exploration_plan_generation_timer_.stop();
             manualTarget = true;
             ROS_INFO("Received maual goal pose");
             hector_nav_msgs::GetRobotTrajectory srv_navigation_plan;
@@ -77,6 +105,7 @@
             if (navigation_plan_service_client_.call(srv_navigation_plan)) {
                 ROS_INFO("Generated navigation path with %u poses", (unsigned int)srv_navigation_plan.response.trajectory.poses.size());
                 path_follower_.setPlan(srv_navigation_plan.response.trajectory.poses);
+                cmd_vel_generator_timer_.start();
             } else {
                 ROS_WARN("Service call for navigation service failed");
             }
@@ -85,6 +114,8 @@
         virtual void explorationGoalAchieved() {
             if (!manualTarget)
                 exploration_plan_generation_timer_.start();
+            else
+                cmd_vel_generator_timer_.stop();
         }
         
     protected:
@@ -93,6 +124,8 @@
         ros::Publisher vel_pub_;
 
         ros::Subscriber manual_goal_sub_;
+        ros::Subscriber exploration_mode_sub_;
+        ros::Subscriber terminate_motors_sub_;
         
         tf::TransformListener tfl_;
         
