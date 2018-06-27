@@ -73,6 +73,7 @@ public:
 
   void scanCallback(const sensor_msgs::LaserScan& scan);
   void sysMsgCallback(const std_msgs::String& string);
+  void explorationModeHandler(const std_msgs::String &message);
 
   bool mapCallback(nav_msgs::GetMap::Request  &req, nav_msgs::GetMap::Response &res);
 
@@ -104,6 +105,8 @@ protected:
 
   ros::Subscriber scanSubscriber_;
   ros::Subscriber sysMsgSubscriber_;
+  ros::Subscriber explorationModeSubscriber_;
+  bool mappingEnabled_;
 
   ros::Subscriber mapSubscriber_;
   message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped>* initial_pose_sub_;
