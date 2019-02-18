@@ -257,9 +257,9 @@
             }
 
             // //if it is legal... we'll pass it on
-            // cmd_vel = test_vel;
+            cmd_vel = test_vel;
 
-            // ROS_INFO("HectorPathFollower:test_vel x: %f, z: %f", test_vel.linear.x, test_vel.angular.z);
+            ROS_INFO("HectorPathFollower:test_vel x: %f, z: %f", test_vel.linear.x, test_vel.angular.z);
 
             last_cmd_vel = test_vel;
 

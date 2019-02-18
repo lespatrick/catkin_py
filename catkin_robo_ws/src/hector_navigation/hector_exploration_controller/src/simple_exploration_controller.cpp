@@ -71,6 +71,7 @@
         void timerCmdVelGeneration(const ros::TimerEvent& e) {
             geometry_msgs::Twist twist;
             path_follower_.computeVelocityCommands(twist);
+            // ROS_INFO("cmd_vel: %.2f, %.2f", twist.linear.x, twist.angular.z);
             vel_pub_.publish(twist);
         }
 
