@@ -1,4 +1,4 @@
-export ROS_IP=172.24.1.132
+export ROS_IP=192.168.0.101
 
 source catkin_robo_ws/devel/setup.bash
 
