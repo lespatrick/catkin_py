@@ -336,11 +336,7 @@ void HectorMappingRos::sysMsgCallback(const std_msgs::String& string)
 }
 
 void HectorMappingRos::explorationModeHandler(const std_msgs::String &message) {
-    if (message.data == "ON") {
-        slamProcessor->dont_update_map = false;
-    } else {
-        slamProcessor->dont_update_map = true;
-    }
+  slamProcessor->dont_update_map = message.data != "ON";
 }
 
 bool HectorMappingRos::mapCallback(nav_msgs::GetMap::Request  &req,

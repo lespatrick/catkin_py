@@ -7,13 +7,17 @@ import tf.transformations
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 
+from src.PersistentStorage import PersistentStorage
+
 app = Flask(__name__)
+persistentStorage = PersistentStorage()
 manualGoalPublisher = rospy.Publisher('manual_goal_pose', PoseStamped, queue_size=10)
 explorationPublisher = rospy.Publisher('exploration_on', String, queue_size=10)
 stopMotorsPublisher = rospy.Publisher('stop_motors', String, queue_size=10)
 
 
 def shutdownHandler():
+    persistentStorage.saveLocations()
     raise RuntimeError("Server going down")
 
 
@@ -57,6 +61,17 @@ def start_exploration():
 @app.route('/stop_motors', methods=['PUT'])
 def stop_motors():
     stopMotorsPublisher.publish("")
+    return "OK"
+
+
+@app.route('/save_location', methods=['PUT'])
+def stop_motors():
+    if not request.form:
+        abort(400)
+
+    # catch robot location and add to saved
+    # name = request.form['name']
+    # persistentStorage.addLocation(pose, name)
     return "OK"
 
 
