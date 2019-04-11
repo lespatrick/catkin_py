@@ -4,20 +4,21 @@ from flask import Flask, request, abort
 
 import rospy
 import tf.transformations
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Twist
 from std_msgs.msg import String
 
-from src.PersistentStorage import PersistentStorage
+# from PersistentStorage import PersistentStorage
 
 app = Flask(__name__)
-persistentStorage = PersistentStorage()
+# persistentStorage = PersistentStorage()
 manualGoalPublisher = rospy.Publisher('manual_goal_pose', PoseStamped, queue_size=10)
 explorationPublisher = rospy.Publisher('exploration_on', String, queue_size=10)
 stopMotorsPublisher = rospy.Publisher('stop_motors', String, queue_size=10)
+motorsPublisher = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
 
 def shutdownHandler():
-    persistentStorage.saveLocations()
+    # persistentStorage.saveLocations()
     raise RuntimeError("Server going down")
 
 
@@ -64,14 +65,15 @@ def stop_motors():
     return "OK"
 
 
-@app.route('/save_location', methods=['PUT'])
-def stop_motors():
-    if not request.form:
-        abort(400)
-
-    # catch robot location and add to saved
-    # name = request.form['name']
-    # persistentStorage.addLocation(pose, name)
+@app.route('/override_motors', methods=['PUT'])
+def override_motors():
+    lineX = float(request.form['strength'])
+    angleZ = float(request.form['angle'])
+    twist = Twist()
+    twist.linear.x = lineX * 0.5
+    twist.angular.z = angleZ
+    motorsPublisher.publish(twist)
+    rospy.loginfo(str(angleZ))
     return "OK"
 
 
@@ -80,7 +82,6 @@ def publisher():
     
     app.run(port=9090, host="0.0.0.0", threaded=True, debug=True)
     rospy.loginfo("Server is running")
-
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 

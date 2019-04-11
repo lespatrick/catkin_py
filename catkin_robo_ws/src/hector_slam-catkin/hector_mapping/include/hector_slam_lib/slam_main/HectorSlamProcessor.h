@@ -75,10 +75,10 @@ public:
     Eigen::Vector3f newPoseEstimateWorld;
 
     if (!map_without_matching) {
-      ROS_INFO("Map with matching");
+      // ROS_INFO("Map with matching");
         newPoseEstimateWorld = (mapRep->matchData(poseHintWorld, dataContainer, lastScanMatchCov));
     } else {
-      ROS_INFO("Map without matching");
+      // ROS_INFO("Map without matching");
         newPoseEstimateWorld = poseHintWorld;
     }
 
