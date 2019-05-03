@@ -91,10 +91,14 @@ public:
   void staticMapCallback(const nav_msgs::OccupancyGrid& map);
   void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
+  void saveMap(const nav_msgs::OccupancyGrid& map, const std::string mapname_);
+
   /*
   void setStaticMapData(const nav_msgs::OccupancyGrid& map);
   */
 protected:
+
+  void saveMapHandler(const std_msgs::String &message);
 
   HectorDebugInfoProvider* debugInfoProvider;
   HectorDrawings* hectorDrawings;
@@ -106,6 +110,7 @@ protected:
   ros::Subscriber scanSubscriber_;
   ros::Subscriber sysMsgSubscriber_;
   ros::Subscriber explorationModeSubscriber_;
+  ros::Subscriber saveMapSubscriber_;
   bool mappingEnabled_;
 
   ros::Subscriber mapSubscriber_;

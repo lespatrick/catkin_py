@@ -15,6 +15,7 @@ manualGoalPublisher = rospy.Publisher('manual_goal_pose', PoseStamped, queue_siz
 explorationPublisher = rospy.Publisher('exploration_on', String, queue_size=10)
 stopMotorsPublisher = rospy.Publisher('stop_motors', String, queue_size=10)
 motorsPublisher = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+saveMapPublisher = rospy.Publisher('save_map', String, queue_size=1)
 
 
 def shutdownHandler():
@@ -74,6 +75,13 @@ def override_motors():
     twist.angular.z = angleZ
     motorsPublisher.publish(twist)
     rospy.loginfo(str(angleZ))
+    return "OK"
+
+
+@app.route('/save_map', methods=['PUT'])
+def save_map():
+    saveMapPublisher.publish("")
+    rospy.loginfo('/save_map call received')
     return "OK"
 
 
