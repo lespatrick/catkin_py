@@ -45,6 +45,7 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>tf</build_depend>
+  <build_depend>tf2</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>laser_geometry</build_depend>
   <build_depend>tf_conversions</build_depend>
@@ -55,6 +56,7 @@
   <run_depend>nav_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>tf</run_depend>
+  <run_depend>tf2</run_depend>
   <run_depend>message_filters</run_depend>
   <run_depend>laser_geometry</run_depend>
   <run_depend>tf_conversions</run_depend>
