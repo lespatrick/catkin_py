@@ -39,8 +39,13 @@
 #include "HectorDebugInfoProvider.h"
 #include "HectorMapMutex.h"
 #include <stdio.h>
+#include <fstream>
+#include <boost/filesystem.hpp>
 
 #include "tf2/LinearMath/Matrix3x3.h"
+#include <tf2/LinearMath/Quaternion.h>
+#include <SDL2/SDL_image.h>
+#include "yaml-cpp/yaml.h"
 
 #ifndef TF_SCALAR_H
   typedef btScalar tfScalar;
@@ -184,7 +189,8 @@ HectorMappingRos::HectorMappingRos()
   scanSubscriber_ = node_.subscribe(p_scan_topic_, p_scan_subscriber_queue_size_, &HectorMappingRos::scanCallback, this);
   sysMsgSubscriber_ = node_.subscribe(p_sys_msg_topic_, 2, &HectorMappingRos::sysMsgCallback, this);
   explorationModeSubscriber_ = node_.subscribe("exploration_on", 2, &HectorMappingRos::explorationModeHandler, this);
-  saveMapSubscriber_ = node_.subscribe("save_map", 1, &HectorMappingRos::saveMapHandler,this);
+  saveMapSubscriber_ = node_.subscribe("save_map", 1, &HectorMappingRos::saveMapHandler, this);
+  loadMapSubscriber_ = node_.subscribe("load_map", 1, &HectorMappingRos::loadMapHandler, this);
 
   poseUpdatePublisher_ = node_.advertise<geometry_msgs::PoseWithCovarianceStamped>(p_pose_update_topic_, 1, false);
   posePublisher_ = node_.advertise<geometry_msgs::PoseStamped>("slam_out_pose", 1, false);
@@ -489,7 +495,7 @@ void HectorMappingRos::publishMapLoop(double map_pub_period)
   {
     ros::Time mapTime (ros::Time::now());
     
-    publishMap(mapPubContainer[0],slamProcessor->getGridMap(0), mapTime, slamProcessor->getMapMutex(0));
+    publishMap(mapPubContainer[0], slamProcessor->getGridMap(0), mapTime, slamProcessor->getMapMutex(0));
 
     r.sleep();
   }
@@ -582,5 +588,235 @@ free_thresh: 0.196
   fclose(yaml);
 
   ROS_INFO("Done\n");
+}
+
+#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
+
+#ifdef HAVE_YAMLCPP_GT_0_5_0
+// The >> operator disappeared in yaml-cpp 0.5, so this function is
+// added to provide support for code written under the yaml-cpp 0.3 API.
+template<typename T>
+void operator >> (const YAML::Node& node, T& i)
+{
+  i = node.as<T>();
+}
+#endif
+
+void HectorMappingRos::loadMapHandler(const std_msgs::String &message) {
+  nav_msgs::GetMap::Response map_resp_;
+  std::string mapfname = "";
+  int negate;
+  double res, occ_th, free_th, origin[3];
+  MapMode mode = TRINARY;
+
+  std::string fname("/home/leszek/savedMap.yaml");
+
+  std::ifstream fin(fname.c_str());
+  if (fin.fail()) {
+    ROS_ERROR("Map_server could not open %s.", fname.c_str());
+    exit(-1);
+  }
+
+  YAML::Node doc = YAML::Load(fin);
+  try {
+    doc["resolution"] >> res;
+  } catch (YAML::InvalidScalar &) {
+    ROS_ERROR("The map does not contain a resolution tag or it is invalid.");
+    exit(-1);
+  }
+  try {
+    doc["negate"] >> negate;
+  } catch (YAML::InvalidScalar &) {
+    ROS_ERROR("The map does not contain a negate tag or it is invalid.");
+    exit(-1);
+  }
+  try {
+    doc["occupied_thresh"] >> occ_th;
+  } catch (YAML::InvalidScalar &) {
+    ROS_ERROR("The map does not contain an occupied_thresh tag or it is invalid.");
+    exit(-1);
+  }
+  try {
+    doc["free_thresh"] >> free_th;
+  } catch (YAML::InvalidScalar &) {
+    ROS_ERROR("The map does not contain a free_thresh tag or it is invalid.");
+    exit(-1);
+  }
+  try {
+    std::string modeS = "";
+    doc["mode"] >> modeS;
+
+    if(modeS=="trinary")
+      mode = TRINARY;
+    else if(modeS=="scale")
+      mode = SCALE;
+    else if(modeS=="raw")
+      mode = RAW;
+    else{
+      ROS_ERROR("Invalid mode tag \"%s\".", modeS.c_str());
+      exit(-1);
+    }
+  } catch (YAML::Exception &) {
+    ROS_DEBUG("The map does not contain a mode tag or it is invalid... assuming Trinary");
+    mode = TRINARY;
+  }
+  try {
+    doc["origin"][0] >> origin[0];
+    doc["origin"][1] >> origin[1];
+    doc["origin"][2] >> origin[2];
+  } catch (YAML::InvalidScalar &) {
+    ROS_ERROR("The map does not contain an origin tag or it is invalid.");
+    exit(-1);
+  }
+  try {
+    doc["image"] >> mapfname;
+    // TODO: make this path-handling more robust
+    if(mapfname.size() == 0)
+    {
+      ROS_ERROR("The image tag cannot be an empty string.");
+      exit(-1);
+    }
+
+    boost::filesystem::path mapfpath(mapfname);
+    if (!mapfpath.is_absolute())
+    {
+      boost::filesystem::path dir(fname);
+      dir = dir.parent_path();
+      mapfpath = dir / mapfpath;
+      mapfname = mapfpath.string();
+    }
+  } catch (YAML::InvalidScalar &) {
+    ROS_ERROR("The map does not contain an image tag or it is invalid.");
+    exit(-1);
+  }
+
+  this->loadMapFromFile(&map_resp_, mapfname.c_str(), res, negate, occ_th, free_th, origin, mode);
+
+  this->mapPubContainer[0].map_ = map_resp_;
+
+  hectorslam::GridMap& gridMap = slamProcessor->getGridMap(0);
+  std::vector<int8_t>& data = map_resp_.map.data;
+
+  int sizeX = gridMap.getSizeX();
+  int sizeY = gridMap.getSizeY();
+
+  int size = sizeX * sizeY;
+
+  slamProcessor->reset();
+  
+  for(int i=0; i < size; ++i) {
+    if(data[i] == 0) {
+      gridMap.updateSetFree(i);
+    } else if (data[i] == 100) {
+      gridMap.updateSetOccupied(i);
+    }
+  }
+}
+
+void HectorMappingRos::loadMapFromFile(nav_msgs::GetMap::Response* resp,
+                const char* fname, double res, bool negate,
+                double occ_th, double free_th, double* origin,
+                MapMode mode) {
+  SDL_Surface* img;
+
+  unsigned char* pixels;
+  unsigned char* p;
+  unsigned char value;
+  int rowstride, n_channels, avg_channels;
+  unsigned int i,j;
+  int k;
+  double occ;
+  int alpha;
+  int color_sum;
+  double color_avg;
+
+  // Load the image using SDL.  If we get NULL back, the image load failed.
+  if(!(img = IMG_Load(fname)))
+  {
+    std::string errmsg = std::string("failed to open image file \"") +
+            std::string(fname) + std::string("\": ") + IMG_GetError();
+    throw std::runtime_error(errmsg);
+  }
+
+  // Copy the image data into the map structure
+  resp->map.info.width = img->w;
+  resp->map.info.height = img->h;
+  resp->map.info.resolution = res;
+  resp->map.info.origin.position.x = *(origin);
+  resp->map.info.origin.position.y = *(origin+1);
+  resp->map.info.origin.position.z = 0.0;
+  tf2::Quaternion q;
+  // setEulerZYX(yaw, pitch, roll)
+  q.setEulerZYX(*(origin+2), 0, 0);
+  resp->map.info.origin.orientation.x = q.x();
+  resp->map.info.origin.orientation.y = q.y();
+  resp->map.info.origin.orientation.z = q.z();
+  resp->map.info.origin.orientation.w = q.w();
+
+  // Allocate space to hold the data
+  resp->map.data.resize(resp->map.info.width * resp->map.info.height);
+
+  // Get values that we'll need to iterate through the pixels
+  rowstride = img->pitch;
+  n_channels = img->format->BytesPerPixel;
+
+  // NOTE: Trinary mode still overrides here to preserve existing behavior.
+  // Alpha will be averaged in with color channels when using trinary mode.
+  if (mode==TRINARY || !img->format->Amask)
+    avg_channels = n_channels;
+  else
+    avg_channels = n_channels - 1;
+
+  // Copy pixel data into the map structure
+  pixels = (unsigned char*)(img->pixels);
+  for(j = 0; j < resp->map.info.height; j++)
+  {
+    for (i = 0; i < resp->map.info.width; i++)
+    {
+      // Compute mean of RGB for this pixel
+      p = pixels + j*rowstride + i*n_channels;
+      color_sum = 0;
+      for(k=0;k<avg_channels;k++)
+        color_sum += *(p + (k));
+      color_avg = color_sum / (double)avg_channels;
+
+      if (n_channels == 1)
+          alpha = 1;
+      else
+          alpha = *(p+n_channels-1);
+
+      if(negate)
+        color_avg = 255 - color_avg;
+
+      if(mode==RAW){
+          value = color_avg;
+          resp->map.data[MAP_IDX(resp->map.info.width,i,resp->map.info.height - j - 1)] = value;
+          continue;
+      }
+
+
+      // If negate is true, we consider blacker pixels free, and whiter
+      // pixels occupied.  Otherwise, it's vice versa.
+      occ = (255 - color_avg) / 255.0;
+
+      // Apply thresholds to RGB means to determine occupancy values for
+      // map.  Note that we invert the graphics-ordering of the pixels to
+      // produce a map with cell (0,0) in the lower-left corner.
+      if(occ > occ_th)
+        value = +100;
+      else if(occ < free_th)
+        value = 0;
+      else if(mode==TRINARY || alpha < 1.0)
+        value = -1;
+      else {
+        double ratio = (occ - free_th) / (occ_th - free_th);
+        value = 99 * ratio;
+      }
+
+      resp->map.data[MAP_IDX(resp->map.info.width,i,resp->map.info.height - j - 1)] = value;
+    }
+  }
+
+  SDL_FreeSurface(img);
 }
 

@@ -16,6 +16,7 @@ explorationPublisher = rospy.Publisher('exploration_on', String, queue_size=10)
 stopMotorsPublisher = rospy.Publisher('stop_motors', String, queue_size=10)
 motorsPublisher = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 saveMapPublisher = rospy.Publisher('save_map', String, queue_size=1)
+loadMapPublisher = rospy.Publisher('load_map', String, queue_size=1)
 
 
 def shutdownHandler():
@@ -24,11 +25,6 @@ def shutdownHandler():
 
 
 rospy.on_shutdown(shutdownHandler)
-
-
-@app.route('/', methods=["GET"])
-def index():
-    return "Hello, World!"
 
 
 @app.route('/manual_pose', methods=['PUT'])
@@ -82,6 +78,13 @@ def override_motors():
 def save_map():
     saveMapPublisher.publish("")
     rospy.loginfo('/save_map call received')
+    return "OK"
+
+
+@app.route('/load_map', methods=['PUT'])
+def load_map():
+    loadMapPublisher.publish("")
+    rospy.loginfo('/load_map call received')
     return "OK"
 
 

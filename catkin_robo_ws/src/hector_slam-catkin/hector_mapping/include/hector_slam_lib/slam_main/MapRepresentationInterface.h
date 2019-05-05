@@ -46,7 +46,7 @@ public:
   virtual float getScaleToMap() const = 0;
 
   virtual int getMapLevels() const = 0;
-  virtual const GridMap& getGridMap(int mapLevel = 0) const = 0;
+  virtual GridMap& getGridMap(int mapLevel = 0) = 0;
 
   virtual void addMapMutex(int i, MapLockerInterface* mapMutex) = 0;
   virtual MapLockerInterface* getMapMutex(int i) = 0;

@@ -104,8 +104,13 @@ INCLUDE(FindPkgConfig)
 
 PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
 PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
+pkg_check_modules(YAMLCPP yaml-cpp REQUIRED)
+if(YAMLCPP_VERSION VERSION_GREATER "0.5.0")
+    add_definitions(-DHAVE_YAMLCPP_GT_0_5_0)
+endif()
+link_directories(${YAMLCPP_LIBRARY_DIRS})
 
-INCLUDE_DIRECTORIES(${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUDE_DIRS} ${YAMLCPP_INCLUDE_DIRS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(hector_mapping
@@ -113,6 +118,7 @@ target_link_libraries(hector_mapping
   ${Boost_LIBRARIES}
   ${SDL2_LIBRARIES}
   ${SDL2IMAGE_LIBRARIES}
+  ${YAMLCPP_LIBRARIES}
 )
 
 #############

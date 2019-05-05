@@ -131,7 +131,7 @@ public:
   float getScaleToMap() const { return mapRep->getScaleToMap(); };
 
   int getMapLevels() const { return mapRep->getMapLevels(); };
-  const GridMap& getGridMap(int mapLevel = 0) const { return mapRep->getGridMap(mapLevel); };
+  GridMap& getGridMap(int mapLevel = 0) { return mapRep->getGridMap(mapLevel); };
 
   void addMapMutex(int i, MapLockerInterface* mapMutex) { mapRep->addMapMutex(i, mapMutex); };
   MapLockerInterface* getMapMutex(int i) { return mapRep->getMapMutex(i); };

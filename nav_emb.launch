@@ -86,6 +86,6 @@
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="apiServer" pkg="api" type="apiServer.py"/>
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find nav_core)/../../../config_file.rviz"/>
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find nav_core)/../../../rviz_config.rviz"/>
 
 </launch>

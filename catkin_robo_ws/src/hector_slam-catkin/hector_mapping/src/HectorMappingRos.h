@@ -64,6 +64,8 @@ public:
   ros::ServiceServer dynamicMapServiceServer_;
 };
 
+enum MapMode {TRINARY, SCALE, RAW};
+
 class HectorMappingRos
 {
 public:
@@ -92,13 +94,16 @@ public:
   void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   void saveMap(const nav_msgs::OccupancyGrid& map, const std::string mapname_);
-
+  void loadMapFromFile(nav_msgs::GetMap::Response* resp,
+                const char* fname, double res, bool negate,
+                double occ_th, double free_th, double* origin,
+                MapMode mode);
   /*
   void setStaticMapData(const nav_msgs::OccupancyGrid& map);
   */
 protected:
-
   void saveMapHandler(const std_msgs::String &message);
+  void loadMapHandler(const std_msgs::String &message);
 
   HectorDebugInfoProvider* debugInfoProvider;
   HectorDrawings* hectorDrawings;
@@ -111,6 +116,7 @@ protected:
   ros::Subscriber sysMsgSubscriber_;
   ros::Subscriber explorationModeSubscriber_;
   ros::Subscriber saveMapSubscriber_;
+  ros::Subscriber loadMapSubscriber_;
   bool mappingEnabled_;
 
   ros::Subscriber mapSubscriber_;
