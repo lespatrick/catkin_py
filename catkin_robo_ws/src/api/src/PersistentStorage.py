@@ -1,33 +1,37 @@
 #! /usr/bin/env python
-# import jsonpickle
+import jsonpickle
+import rospy
 
-# from model.Location import Location
+from Location import Location
 
+class PersistentStorage:
+    locationsFileName = '/home/leszek/locations'
+    locations = []
 
-# class PersistentStorage:
-#     locationsFileName = 'locations'
-#     locations = []
+    def addLocation(self, pose, name):
+        location = Location(pose, name)
+        self.locations.append(location)
 
-#     def __init__(self):
-#         pass
+    def saveLocations(self):
+        rospy.loginfo("writting locations")
+        try:
+            with open(self.locationsFileName, 'w') as locationsFile:
+                locationsFile.write(self.locationsJson())
+        except IOError as e:
+            pass
 
-#     def addLocation(self, pose, name):
-#         location = Location(pose, name)
-#         self.locations.add(location)
+    def readLocations(self):
+        try:
+            with open(self.locationsFileName) as locationsFile:
+                locationsJson = locationsFile.read()
+                rospy.loginfo('loaded locations')
+                self.locations = jsonpickle.decode(locationsJson)
+        except IOError as e:
+            pass
 
-#     def saveLocations(self):
-#         locationsJson = jsonpickle.encode(self.locations)
-#         locationsFile = open(self.locationsFileName, 'w')
-#         locationsFile.write(locationsJson)
-#         locationsFile.close()
+    def locationsJson(self):
+        return jsonpickle.encode(self.locations)
 
-#     def readLocations(self):
-#         try:
-#             with open(self.locationsFileName) as locationsFile:
-#                 locationsJson = locationsFile.read()
-#                 self.locations = jsonpickle.decode(locationsJson)
-#         except IOError as e:
-#             pass
-
-#     def locationsJson(self):
-#         return jsonpickle.encode(self.locations)
+    def __init__(self):
+        self.readLocations()
+        pass

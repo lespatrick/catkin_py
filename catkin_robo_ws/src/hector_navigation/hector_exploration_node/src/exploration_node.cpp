@@ -44,7 +44,7 @@
             
             planner_ = new hector_exploration_planner::HectorExplorationPlanner();
             planner_->initialize("hector_exploration_planner",costmap_2d_ros_);
-            #include "std_msgs/String.h"
+            
             exploration_plan_service_server_ = nh.advertiseService("get_exploration_path", &SimpleExplorationPlanner::explorationServiceCallback, this);
             navigation_plan_service_server_ = nh.advertiseService("get_navigation_path", &SimpleExplorationPlanner::manualGoalCallback, this);
             
