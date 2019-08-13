@@ -519,7 +519,7 @@ void HectorMappingRos::initialPoseCallback(const geometry_msgs::PoseWithCovarian
 void HectorMappingRos::saveMapHandler(const std_msgs::String &message) {
   nav_msgs::GetMap::Response& map_ (mapPubContainer[0].map_);
 
-  this->saveMap(map_.map, "savedMap");
+  this->saveMap(map_.map, message);
 }
 
 void HectorMappingRos::saveMap(const nav_msgs::OccupancyGrid& map, const std::string mapname_) {
@@ -609,7 +609,8 @@ void HectorMappingRos::loadMapHandler(const std_msgs::String &message) {
   double res, occ_th, free_th, origin[3];
   MapMode mode = TRINARY;
 
-  std::string fname("/home/leszek/savedMap.yaml");
+  std::string mapname_(message);
+  std::string fname("/home/leszek/" + mapname_ + ".yaml");
 
   std::ifstream fin(fname.c_str());
   if (fin.fail()) {

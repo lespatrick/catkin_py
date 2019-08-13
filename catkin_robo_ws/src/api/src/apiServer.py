@@ -77,14 +77,20 @@ def override_motors():
 
 @app.route('/save_map', methods=['PUT'])
 def save_map():
-    saveMapPublisher.publish("")
+    if not request.form:
+        abort(400)
+
+    saveMapPublisher.publish(str(request.form["name"]))
     rospy.loginfo('/save_map call received')
     return "OK"
 
 
 @app.route('/load_map', methods=['PUT'])
 def load_map():
-    loadMapPublisher.publish("")
+    if not request.form:
+        abort(400)
+
+    loadMapPublisher.publish(str(request.form["name"]))
     rospy.loginfo('/load_map call received')
     return "OK"
 
