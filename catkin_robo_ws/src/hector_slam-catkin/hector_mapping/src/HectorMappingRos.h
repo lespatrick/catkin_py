@@ -43,6 +43,7 @@
 #include "nav_msgs/GetMap.h"
 
 #include "slam_main/HectorSlamProcessor.h"
+#include "msg/Location.h"
 
 #include "scan/DataPointContainer.h"
 #include "util/MapLockerInterface.h"
