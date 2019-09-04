@@ -70,22 +70,25 @@
 
     <param name="use_cloud_map" value="false" />
     <param name="cloud_topic" value="openni/depth/points" />
-</node>
+  </node>
 
-<node pkg="hector_exploration_node" type="exploration_planner_node" name="hector_exploration_node" output="screen">
+  <node pkg="hector_exploration_node" type="exploration_planner_node" name="hector_exploration_node" output="screen">
 
-    <rosparam file="$(find hector_exploration_node)/config/costmap.yaml" command="load" />
+      <rosparam file="$(find hector_exploration_node)/config/costmap.yaml" command="load" />
 
-</node>
+  </node>
 
-<node pkg="hector_exploration_controller" type="simple_exploration_controller" name="simple_exploration_controller" launch-prefix="xterm -e gdb -ex run --args">
-</node>
+  <node pkg="hector_exploration_controller" type="simple_exploration_controller" name="simple_exploration_controller" launch-prefix="xterm -e gdb -ex run --args">
+  </node>
 
-    <param name="robot_description" textfile="$(find robot_description)/urdf/robot.urdf" />
-    <param name="use_gui" value="False"/>
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-    <node name="apiServer" pkg="api" type="apiServer.py"/>
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find nav_core)/../../../rviz_config.rviz"/>
+  <param name="robot_description" textfile="$(find robot_description)/urdf/robot.urdf" />
+  <param name="use_gui" value="False"/>
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <node name="apiServer" pkg="api" type="apiServer.py"/>
+
+  <node name="vision_node" pkg="vision" type="vision_node"/>
+
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find nav_core)/../../../rviz_config.rviz"/>
 
 </launch>
