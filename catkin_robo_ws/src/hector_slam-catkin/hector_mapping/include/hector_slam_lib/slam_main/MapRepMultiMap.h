@@ -92,7 +92,7 @@ public:
   virtual float getScaleToMap() const { return mapContainer[0].getScaleToMap(); };
 
   virtual int getMapLevels() const { return mapContainer.size(); };
-  virtual const GridMap& getGridMap(int mapLevel) const { return mapContainer[mapLevel].getGridMap(); };
+  virtual GridMap& getGridMap(int mapLevel) { return mapContainer[mapLevel].getGridMap(); };
 
   virtual void addMapMutex(int i, MapLockerInterface* mapMutex)
   {

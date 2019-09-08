@@ -1,0 +1,45 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "/home/leszek/catkin_py/catkin_robo_ws/devel/include",
+                    "/opt/ros/kinetic/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_costmap/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_elevation_mapping/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_elevation_visualization/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_exploration_planner/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_slam-catkin/hector_geotiff/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_gps_calibration/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_slam-catkin/hector_map_tools/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_slam-catkin/hector_mapping/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_slam-catkin/hector_marker_drawing/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_path_follower/include",
+                    "/home/leszek/catkin_py/catkin_robo_ws/src/robot_description/include",
+                    "/usr/include"
+                ]
+            },
+            "includePath": [
+                "/home/leszek/catkin_py/catkin_robo_ws/devel/include",
+                "/opt/ros/kinetic/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_costmap/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_elevation_mapping/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_elevation_visualization/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_exploration_planner/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_slam-catkin/hector_geotiff/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_gps_calibration/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_slam-catkin/hector_map_tools/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_slam-catkin/hector_mapping/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_slam-catkin/hector_marker_drawing/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/hector_navigation/hector_path_follower/include",
+                "/home/leszek/catkin_py/catkin_robo_ws/src/robot_description/include",
+                "/usr/include"
+            ],
+            "name": "Linux",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 3
+}

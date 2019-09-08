@@ -74,9 +74,11 @@ public:
 
     Eigen::Vector3f newPoseEstimateWorld;
 
-    if (!map_without_matching){
+    if (!map_without_matching) {
+      // ROS_INFO("Map with matching");
         newPoseEstimateWorld = (mapRep->matchData(poseHintWorld, dataContainer, lastScanMatchCov));
-    }else{
+    } else {
+      // ROS_INFO("Map without matching");
         newPoseEstimateWorld = poseHintWorld;
     }
 
@@ -86,15 +88,16 @@ public:
 
     //std::cout << "\n1";
     //std::cout << "\n" << lastScanMatchPose << "\n";
-    if(util::poseDifferenceLargerThan(newPoseEstimateWorld, lastMapUpdatePose, paramMinDistanceDiffForMapUpdate, paramMinAngleDiffForMapUpdate) || map_without_matching){
+    if ((util::poseDifferenceLargerThan(newPoseEstimateWorld, lastMapUpdatePose, paramMinDistanceDiffForMapUpdate, paramMinAngleDiffForMapUpdate) || map_without_matching) && !dont_update_map){
 
       mapRep->updateByScan(dataContainer, newPoseEstimateWorld);
-
+      ROS_INFO("Map updated");
       mapRep->onMapUpdated();
       lastMapUpdatePose = newPoseEstimateWorld;
     }
 
-    if(drawInterface){
+    if (drawInterface) {
+      ROS_INFO("Drawing interface");
       const GridMap& gridMapRef (mapRep->getGridMap());
       drawInterface->setColor(1.0, 0.0, 0.0);
       drawInterface->setScale(0.15);
@@ -128,7 +131,7 @@ public:
   float getScaleToMap() const { return mapRep->getScaleToMap(); };
 
   int getMapLevels() const { return mapRep->getMapLevels(); };
-  const GridMap& getGridMap(int mapLevel = 0) const { return mapRep->getGridMap(mapLevel); };
+  GridMap& getGridMap(int mapLevel = 0) { return mapRep->getGridMap(mapLevel); };
 
   void addMapMutex(int i, MapLockerInterface* mapMutex) { mapRep->addMapMutex(i, mapMutex); };
   MapLockerInterface* getMapMutex(int i) { return mapRep->getMapMutex(i); };
@@ -137,6 +140,8 @@ public:
   void setUpdateFactorOccupied(float occupied_factor) { mapRep->setUpdateFactorOccupied(occupied_factor); };
   void setMapUpdateMinDistDiff(float minDist) { paramMinDistanceDiffForMapUpdate = minDist; };
   void setMapUpdateMinAngleDiff(float angleChange) { paramMinAngleDiffForMapUpdate = angleChange; };
+
+  bool dont_update_map = false;
 
 protected:
 

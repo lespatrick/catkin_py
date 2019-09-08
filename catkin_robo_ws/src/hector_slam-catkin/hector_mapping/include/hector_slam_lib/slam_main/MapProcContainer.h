@@ -77,7 +77,6 @@ public:
 
   float getScaleToMap() const { return gridMap->getScaleToMap(); };
 
-  const GridMap& getGridMap() const { return *gridMap; };
   GridMap& getGridMap() { return *gridMap; };
 
   void addMapMutex(MapLockerInterface* mapMutexIn)

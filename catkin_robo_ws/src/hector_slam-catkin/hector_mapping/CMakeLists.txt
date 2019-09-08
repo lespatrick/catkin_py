@@ -4,7 +4,7 @@ project(hector_mapping)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs visualization_msgs tf message_filters laser_geometry tf_conversions message_generation)
+find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs visualization_msgs tf message_filters laser_geometry tf_conversions message_generation tf2)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS thread signals)
@@ -63,7 +63,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES hector_mapping
-  CATKIN_DEPENDS roscpp nav_msgs visualization_msgs tf message_filters laser_geometry tf_conversions message_runtime
+  CATKIN_DEPENDS roscpp nav_msgs visualization_msgs tf message_filters laser_geometry tf_conversions message_runtime tf2
   DEPENDS EIGEN3
 )
 
@@ -73,9 +73,10 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include include/hector_slam_lib)
+include_directories(include include/hector_slam_lib include/msg)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  "/usr/local/include/SDL2"
   ${EIGEN3_INCLUDE_DIRS}
 )
 
@@ -99,10 +100,25 @@ add_executable(hector_mapping
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(hector_mapping hector_mapping_generate_messages_cpp)
 
+INCLUDE(FindPkgConfig)
+
+PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
+PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
+pkg_check_modules(YAMLCPP yaml-cpp REQUIRED)
+if(YAMLCPP_VERSION VERSION_GREATER "0.5.0")
+    add_definitions(-DHAVE_YAMLCPP_GT_0_5_0)
+endif()
+link_directories(${YAMLCPP_LIBRARY_DIRS})
+
+INCLUDE_DIRECTORIES(${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUDE_DIRS} ${YAMLCPP_INCLUDE_DIRS})
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(hector_mapping
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
+  ${SDL2_LIBRARIES}
+  ${SDL2IMAGE_LIBRARIES}
+  ${YAMLCPP_LIBRARIES}
 )
 
 #############

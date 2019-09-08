@@ -1,0 +1,3 @@
+Author: Eitan Marder-Eppstein, contradict@gmail.com
+License: BSD
+Source: git https://github.com/ros-planning/navigation.git (branch: kinetic-devel)

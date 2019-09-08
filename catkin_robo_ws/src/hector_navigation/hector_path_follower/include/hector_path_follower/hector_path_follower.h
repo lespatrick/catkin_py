@@ -37,6 +37,7 @@
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <list>
 
 namespace pose_follower {
   class HectorPathFollowerDelegate {
@@ -87,10 +88,21 @@ namespace pose_follower {
       //nav_msgs::Odometry base_odom_;
       double trans_stopped_velocity_, rot_stopped_velocity_;
       ros::Time goal_reached_time_;
-      unsigned int current_waypoint_; 
+      unsigned int current_waypoint_;
       std::vector<geometry_msgs::PoseStamped> global_plan_;
       //base_local_planner::TrajectoryPlannerROS collision_planner_;
       int samples_;
+      geometry_msgs::Twist last_cmd_vel;
+      geometry_msgs::Twist last_angular_vel;
+
+      bool rotation_mode = false;
+
+      std::list<tf::Stamped<tf::Pose> > lastPoses_;
+
+      const double acceleration = 0.007;
+      const double angular_acc = 0.01;
+      const double max_speed = 0.55;
+      const double max_angular_speed = 2.0;
   };
 };
 #endif
